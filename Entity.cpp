@@ -38,14 +38,17 @@ void Entity::CheckCollisionsY(Entity* objects, int objectCount)
 				position.y -= penetrationY;
 				velocity.y = 0;
 				collidedTop = true;
+				lastCollided = object->entityType;
 			}
 			else if (velocity.y < 0) {
 				position.y += penetrationY;
 				velocity.y = 0;
 				collidedBottom = true;
+				lastCollided = object->entityType;
 			}
-		}
+		}	
 	}
+	
 }
 
 void Entity::CheckCollisionsX(Entity* objects, int objectCount)

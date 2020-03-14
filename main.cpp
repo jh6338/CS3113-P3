@@ -17,7 +17,7 @@
 
 #include "Entity.h"
 
-#define PLATFORM_COUNT 13
+#define PLATFORM_COUNT 14
 #define LANDING_COUNT 2 
 
 /*
@@ -57,7 +57,7 @@ bool gameEnd = false;
 GLuint LoadTexture(const char* filepath);
 void DrawText(ShaderProgram* program, GLuint fontTextureID, std::string text, float size, float spacing, glm::vec3 position); 
 
-GLuint fontTextureID = LoadTexture("font1.png");
+GLuint fontTextureID;
 
 void Initialize() {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -119,9 +119,14 @@ void Initialize() {
 	state.player->jumpPower = 5.0f;
 	*/
 
-	// platforms stuff 
+	// Initialize Platforms
+
 	state.platforms = new Entity[PLATFORM_COUNT];
 	GLuint platformTextureID = LoadTexture("platformPack_tile040.png");
+
+	for (int i = 0; i < PLATFORM_COUNT; ++i) {
+		state.platforms[i].entityType = PLATFORM; 
+	}
 
 	state.platforms[0].textureID = platformTextureID;
 	state.platforms[0].position = glm::vec3(-1, -3.25f, 0);
@@ -162,10 +167,17 @@ void Initialize() {
 	state.platforms[12].textureID = platformTextureID;
 	state.platforms[12].position = glm::vec3(-3.4f, 0.5f, 0);
 
+	state.platforms[13].textureID = platformTextureID; 
+	state.platforms[13].position = glm::vec3(-0.5f, -0.5f, 0); 
+
 	// Initialize Landings 
 
 	state.landing = new Entity[LANDING_COUNT];
 	GLuint landingTextureID = LoadTexture("platformPack_tile013.png");
+
+	for (int i = 0; i < LANDING_COUNT; ++i) {
+		state.landing[i].entityType = LANDING; 
+	}
 
 	state.landing[0].textureID = landingTextureID; 
 	state.landing[0].position = glm::vec3(2, -3.25f, 0); 
@@ -180,6 +192,8 @@ void Initialize() {
 	for (int i = 0; i < LANDING_COUNT; ++i) {
 		state.landing[i].Update(0, NULL, 0); 
 	}
+
+	fontTextureID = LoadTexture("font1.png");
 
 }
 
@@ -286,12 +300,60 @@ void Update() {
 
 	accumulator = deltaTime;
 
+	/*
+	if (state.player->lastCollided == PLATFORM) {
+		state.player->isActive = false; 
+		gameEnd = true; 
+		success = false; 
+	}
+	else if (state.player->lastCollided == LANDING) {
+		state.player->isActive = false; 
+		gameEnd = true; 
+		success = true; 
+	}
+	*/
+
+	// /*
+	switch (state.player->lastCollided) {
+		case NONE: 
+			break; 
+		case PLATFORM: 
+			gameEnd = true; 
+			success = false;
+			state.player->isActive = false;
+			break; 
+		case LANDING: 
+			gameEnd = true; 
+			success = true; 
+			state.player->isActive = false;
+			break; 
+	}
+	// */
+
+	/*
+	if (!gameEnd) {
+		for (int i = 0; i < PLATFORM_COUNT; ++i) {
+
+			Entity* object = &state.platforms[i];
+
+			// if (state.player->CheckCollision(object)) { // if we collided with wrong platforms 
+			if (state.player->collidedBottom) { // if we collided with wrong platforms 
+				// mission failed  
+				state.player->isActive = false;
+				gameEnd = true;
+				success = false;
+				break;
+			}
+		}
+	}
+
 	if (!gameEnd) {
 		for (int i = 0; i < LANDING_COUNT; ++i) {
 			
 			Entity* object = &state.landing[i]; 
 
-			if (state.player->CheckCollision(object)) { // if we collided with proper landing 
+			// if (state.player->CheckCollision(object)) { // if we collided with proper landing 
+			if (state.player->collidedBottom) { // if we collided with proper landing 
 				// mission success 
 				state.player->isActive = false;
 				gameEnd = true;
@@ -301,21 +363,7 @@ void Update() {
 		}
 	}
 	
-	if (!gameEnd) {
-		for (int i = 0; i < PLATFORM_COUNT; ++i) {
-
-			Entity* object = &state.platforms[i]; 
-
-			if (state.player->CheckCollision(object)) { // if we collided with wrong platforms 
-				// mission failed  
-				state.player->isActive = false;
-				gameEnd = true;
-				success = false;
-				break; 
-			}
-		}
-	}
-
+	*/
 }
 
 void Render() {
@@ -331,7 +379,7 @@ void Render() {
 
 	if (gameEnd) {
 		if (success) {
-			DrawText(&program, fontTextureID, "Mission Successful", 0.5f, -0.25f, glm::vec3(-4.75f, 3.4f, 0));
+			DrawText(&program, fontTextureID, "Mission Successful!", 0.5f, -0.25f, glm::vec3(-4.75f, 3.4f, 0));
 		}
 		else {
 			DrawText(&program, fontTextureID, "Mission Failed", 0.5f, -0.25f, glm::vec3(-4.75f, 3.4f, 0));
@@ -378,7 +426,8 @@ void DrawText(ShaderProgram* program, GLuint fontTextureID, std::string text,
 		int index = (int)text[i];
 		float offset = (size + spacing) * i;
 		float u = (float)(index % 16) / 16.0f;
-		float v = (float)(index / 16) / 16.0f;		vertices.insert(vertices.end(), {
+		float v = (float)(index / 16) / 16.0f;
+		vertices.insert(vertices.end(), {
 		 offset + (-0.5f * size), 0.5f * size,
 		 offset + (-0.5f * size), -0.5f * size,
 		 offset + (0.5f * size), 0.5f * size,
@@ -414,7 +463,8 @@ void DrawText(ShaderProgram* program, GLuint fontTextureID, std::string text,
 
 	glDisableVertexAttribArray(program->positionAttribute);
 	glDisableVertexAttribArray(program->texCoordAttribute);
-}
+}
+
 
 void Shutdown() {
 	SDL_Quit();
